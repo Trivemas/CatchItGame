@@ -33,17 +33,64 @@ let player = {
     }
 };
 
+
+let sbImage = new Image();
+sbImage.src = '../images/scoreboard.png'
+
 let scoreBoard = {
     goodTally: 0,
     badTally: 0,
+    goodBlocks: [],
+    badBlocks: [],
+    x: 8,
+    y: 544,
+    caughtBlockY: 552,
+    victoryBlock: 384,
+    isGameOver: false,
+    didPlayerWin: false,
     scoreBlock: function(block) {
+        let goodStartingX = 16;
+        let badStartingX = 752;
+        let scoreBlockSpacing = 40;
+        let spacingMultiplier = 0;
         if(block.isGoodBlock) {
             this.goodTally++;
+            this.goodBlocks.push(block);
+            spacingMultiplier = this.goodBlocks.length - 1;
+            if(spacingMultiplier < 8) {
+                block.x = goodStartingX + (spacingMultiplier * scoreBlockSpacing);
+            } else {
+				block.x = this.victoryBlockX;
+				this.isGameOver = true;
+				didPlayerWin = true;
+			}   
         } else {
             this.badTally++;
+            this.badBlocks.push(block);
+            spacingMultiplier = this.badBlocks.length - 1;
+            if (spacingMultiplier < 8) {
+				block.x = badStartingX - spacingMultiplier * scoreBlockSpacing;
+			} else {
+				block.x = this.victoryBlockX;
+				this.isGameOver = true;
+				didPlayerWin = false;
+            }
         }
+        block.isScored = true;
+        block.y = this.caughtBlockY;
     },
+    update: function() {
+
+    },
+    render: function() {
+        ctx.save();
+        ctx.drawImage(sbImage, this.x, this.y);
+        this.goodBlocks.forEach((block) => block.render());
+        this.badBlocks.forEach((block) => block.render());
+        ctx.restore();
+    }
 };
+
 
 window.addEventListener('keydown', (e) => {
     if(e.key === 'ArrowLeft' || e.key === 'a') // || means or
@@ -58,6 +105,7 @@ window.addEventListener('keyup', (e) => {
     if(e.key === 'ArrowRight' || e.key === 'd')
         player.isMovingRight = false;
 });
+
 
 class Block {
     constructor() {
@@ -100,7 +148,8 @@ class Block {
            return;
        }
 
-       this.isCaught = true;
+        scoreBoard.scoreBlock(this);
+        this.isCaught = true;
     }
 }
 
@@ -132,6 +181,11 @@ function gameLoop(timestamp) {
     player.update();
     player.render();
 
-    requestAnimationFrame(gameLoop);
+    scoreBoard.update();
+    scoreBoard.render();
+
+    if (!scoreBoard.isGameOver) {
+		requestAnimationFrame(gameLoop);
+    }
 }
 requestAnimationFrame(gameLoop);
